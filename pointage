@@ -2,72 +2,111 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Pointage camions</title>
+  <title>Pointage Camions</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial, sans-serif; margin: 10px; }
-    label { display: block; margin-top: 10px; }
-    input, select, button { width: 100%; padding: 8px; margin-top: 5px; }
-    .success { color: green; margin-top: 10px; }
+    body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; }
+    .container { max-width:600px; margin:20px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    h1 { text-align:center; color:#1a73e8; margin-bottom:5px; }
+    h1 span { margin-right:5px; }
+    .subtitle { text-align:center; color:#777; margin-bottom:20px; }
+    .clock { text-align:center; background:#eaf2ff; padding:15px; border-radius:8px; margin-bottom:20px; }
+    .clock-label { font-size:12px; letter-spacing:1px; color:#777; }
+    .clock-time { font-size:28px; font-weight:bold; color:#1a73e8; }
+    label { display:block; margin-top:10px; font-weight:bold; font-size:14px; }
+    input, textarea { width:100%; padding:10px; margin-top:5px; box-sizing:border-box; border:1px solid #ccc; border-radius:6px; font-size:14px; }
+    textarea { resize:vertical; min-height:60px; }
+    .buttons { display:flex; gap:10px; margin-top:20px; }
+    .btn { flex:1; padding:12px; border:none; border-radius:6px; font-size:16px; cursor:pointer; color:#fff; }
+    .btn-primary { background:#1a73e8; }
+    .btn-secondary { background:#b0b0b0; }
+    .btn-excel { width:100%; margin-top:15px; background:#2e7d32; color:#fff; padding:12px; border:none; border-radius:6px; font-size:16px; cursor:pointer; }
+    .message { margin-top:10px; color:green; font-size:14px; }
   </style>
 </head>
 <body>
-  <h2>Pointage camions</h2>
 
-  <label>Nom du chauffeur</label>
-  <input type="text" id="nom" required>
+  <div class="container">
+    <h1><span>🚚</span>Pointage Camions</h1>
+    <div class="subtitle">Saisie simple et rapide des passages</div>
 
-  <label>Camion (immatriculation / n°)</label>
-  <input type="text" id="camion" required>
+    <div class="clock">
+      <div class="clock-label">HEURE ACTUELLE</div>
+      <div id="clock" class="clock-time">--:--:--</div>
+    </div>
 
-  <label>Type de passage</label>
-  <select id="type">
-    <option value="Entrée">Entrée</option>
-    <option value="Sortie">Sortie</option>
-  </select>
+    <label>Nom de la personne</label>
+    <input type="text" id="nom" placeholder="Ex: Jean Dupont">
 
-  <label>Chantier</label>
-  <input type="text" id="chantier">
+    <label>Numéro/Plaque du camion</label>
+    <input type="text" id="camion" placeholder="Ex: AB-123-CD ou Benne 5">
 
-  <button onclick="enregistrer()">Enregistrer le passage</button>
-  <button onclick="telechargerCSV()">Télécharger CSV</button>
+    <label>Heure de passage</label>
+    <input type="time" id="heure">
 
-  <p class="success" id="message"></p>
+    <label>Notes (optionnel)</label>
+    <textarea id="notes" placeholder="Ex: Livraison, Retrait, Panne..."></textarea>
+
+    <div class="buttons">
+      <button class="btn btn-primary" onclick="enregistrer()">Enregistrer</button>
+      <button class="btn btn-secondary" onclick="effacer()">Effacer</button>
+    </div>
+
+    <button class="btn-excel" onclick="telechargerCSV()">📥 Télécharger en Excel</button>
+
+    <div class="message" id="message"></div>
+  </div>
 
   <script>
-    // Tableau en mémoire pour stocker les enregistrements
     let donnees = [];
+
+    function majHorloge() {
+      const maintenant = new Date();
+      const h = String(maintenant.getHours()).padStart(2, '0');
+      const m = String(maintenant.getMinutes()).padStart(2, '0');
+      const s = String(maintenant.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${h} : ${m} : ${s}`;
+    }
+    setInterval(majHorloge, 1000);
+    majHorloge();
 
     function enregistrer() {
       const nom = document.getElementById('nom').value.trim();
       const camion = document.getElementById('camion').value.trim();
-      const type = document.getElementById('type').value;
-      const chantier = document.getElementById('chantier').value.trim();
+      let heurePassage = document.getElementById('heure').value;
+      const notes = document.getElementById('notes').value.trim();
 
       if (!nom || !camion) {
-        alert('Nom et camion sont obligatoires.');
+        alert('Nom et numéro/plaque du camion sont obligatoires.');
         return;
       }
 
       const maintenant = new Date();
       const date = maintenant.toISOString().split('T')[0];
-      const heure = maintenant.toTimeString().split(' ')[0];
+      if (!heurePassage) {
+        const h = String(maintenant.getHours()).padStart(2, '0');
+        const m = String(maintenant.getMinutes()).padStart(2, '0');
+        heurePassage = `${h}:${m}`;
+      }
 
       donnees.push({
         date,
-        heure,
+        heure: heurePassage,
         nom,
         camion,
-        type,
-        chantier
+        notes
       });
 
-      document.getElementById('message').textContent = 'Passage enregistré : ' +
-        date + ' ' + heure + ' - ' + nom + ' - ' + camion;
+      document.getElementById('message').textContent =
+        `Passage enregistré : ${date} ${heurePassage} - ${nom} - ${camion}`;
+    }
 
-      // Optionnel : vider les champs
-      // document.getElementById('nom').value = '';
-      // document.getElementById('camion').value = '';
+    function effacer() {
+      document.getElementById('nom').value = '';
+      document.getElementById('camion').value = '';
+      document.getElementById('heure').value = '';
+      document.getElementById('notes').value = '';
+      document.getElementById('message').textContent = '';
     }
 
     function telechargerCSV() {
@@ -75,12 +114,10 @@
         alert('Aucune donnée à exporter.');
         return;
       }
-
-      let csv = 'Date;Heure;Nom;Camion;Type;Chantier\n';
+      let csv = 'Date;Heure;Nom;Camion;Notes\n';
       donnees.forEach(ligne => {
-        csv += `${ligne.date};${ligne.heure};${ligne.nom};${ligne.camion};${ligne.type};${ligne.chantier}\n`;
+        csv += `${ligne.date};${ligne.heure};${ligne.nom};${ligne.camion};${ligne.notes}\n`;
       });
-
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
