@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Pointage camions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 10px; }
+    label { display: block; margin-top: 10px; }
+    input, select, button { width: 100%; padding: 8px; margin-top: 5px; }
+    .success { color: green; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Pointage camions</h2>
+
+  <label>Nom du chauffeur</label>
+  <input type="text" id="nom" required>
+
+  <label>Camion (immatriculation / n°)</label>
+  <input type="text" id="camion" required>
+
+  <label>Type de passage</label>
+  <select id="type">
+    <option value="Entrée">Entrée</option>
+    <option value="Sortie">Sortie</option>
+  </select>
+
+  <label>Chantier</label>
+  <input type="text" id="chantier">
+
+  <button onclick="enregistrer()">Enregistrer le passage</button>
+  <button onclick="telechargerCSV()">Télécharger CSV</button>
+
+  <p class="success" id="message"></p>
+
+  <script>
+    // Tableau en mémoire pour stocker les enregistrements
+    let donnees = [];
+
+    function enregistrer() {
+      const nom = document.getElementById('nom').value.trim();
+      const camion = document.getElementById('camion').value.trim();
+      const type = document.getElementById('type').value;
+      const chantier = document.getElementById('chantier').value.trim();
+
+      if (!nom || !camion) {
+        alert('Nom et camion sont obligatoires.');
+        return;
+      }
+
+      const maintenant = new Date();
+      const date = maintenant.toISOString().split('T')[0];
+      const heure = maintenant.toTimeString().split(' ')[0];
+
+      donnees.push({
+        date,
+        heure,
+        nom,
+        camion,
+        type,
+        chantier
+      });
+
+      document.getElementById('message').textContent = 'Passage enregistré : ' +
+        date + ' ' + heure + ' - ' + nom + ' - ' + camion;
+
+      // Optionnel : vider les champs
+      // document.getElementById('nom').value = '';
+      // document.getElementById('camion').value = '';
+    }
+
+    function telechargerCSV() {
+      if (donnees.length === 0) {
+        alert('Aucune donnée à exporter.');
+        return;
+      }
+
+      let csv = 'Date;Heure;Nom;Camion;Type;Chantier\n';
+      donnees.forEach(ligne => {
+        csv += `${ligne.date};${ligne.heure};${ligne.nom};${ligne.camion};${ligne.type};${ligne.chantier}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pointage_camions.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
