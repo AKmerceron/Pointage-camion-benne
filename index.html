@@ -22,6 +22,23 @@
     .btn-secondary { background:#b0b0b0; }
     .btn-excel { width:100%; margin-top:15px; background:#2e7d32; color:#fff; padding:12px; border:none; border-radius:6px; font-size:16px; cursor:pointer; }
     .message { margin-top:10px; color:green; font-size:14px; }
+
+    /* zone tombereaux (nouvelle partie) */
+    .tombereaux { display:flex; gap:10px; margin-top:10px; }
+    .tombereaux button {
+      flex:1;
+      padding:10px;
+      border-radius:6px;
+      border:1px solid #1a73e8;
+      background:#fff;
+      color:#1a73e8;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    .tombereaux button.selected {
+      background:#1a73e8;
+      color:#fff;
+    }
   </style>
 </head>
 <body>
@@ -38,8 +55,16 @@
     <label>Nom de la personne</label>
     <input type="text" id="nom" placeholder="Ex: Jean Dupont">
 
-    <label>Numéro/Plaque du camion</label>
-    <input type="text" id="camion" placeholder="Ex: AB-123-CD ou Benne 5">
+    <!-- Partie tombereaux comme sur ton schéma -->
+    <label>Tombereau</label>
+    <div class="tombereaux">
+      <button type="button" onclick="choisirTombereau('Tombereau n°1', this)">Tombereau n°1</button>
+      <button type="button" onclick="choisirTombereau('Tombereau n°2', this)">Tombereau n°2</button>
+      <button type="button" onclick="choisirTombereau('Tombereau n°3', this)">Tombereau n°3</button>
+    </div>
+
+    <!-- Champ caché ou éditable qui contient la valeur exacte envoyée dans le CSV -->
+    <input type="hidden" id="camion">
 
     <label>Heure de passage</label>
     <input type="time" id="heure">
@@ -70,6 +95,15 @@
     setInterval(majHorloge, 1000);
     majHorloge();
 
+    // sélection du tombereau
+    function choisirTombereau(valeur, bouton) {
+      document.getElementById('camion').value = valeur;
+      // visuel sélectionné
+      const tous = document.querySelectorAll('.tombereaux button');
+      tous.forEach(b => b.classList.remove('selected'));
+      bouton.classList.add('selected');
+    }
+
     function enregistrer() {
       const nom = document.getElementById('nom').value.trim();
       const camion = document.getElementById('camion').value.trim();
@@ -77,7 +111,7 @@
       const notes = document.getElementById('notes').value.trim();
 
       if (!nom || !camion) {
-        alert('Nom et numéro/plaque du camion sont obligatoires.');
+        alert('Nom et tombereau sont obligatoires.');
         return;
       }
 
@@ -107,6 +141,8 @@
       document.getElementById('heure').value = '';
       document.getElementById('notes').value = '';
       document.getElementById('message').textContent = '';
+      const tous = document.querySelectorAll('.tombereaux button');
+      tous.forEach(b => b.classList.remove('selected'));
     }
 
     function telechargerCSV() {
@@ -114,7 +150,7 @@
         alert('Aucune donnée à exporter.');
         return;
       }
-      let csv = 'Date;Heure;Nom;Camion;Notes\n';
+      let csv = 'Date;Heure;Nom;Tombereau;Notes\n';
       donnees.forEach(ligne => {
         csv += `${ligne.date};${ligne.heure};${ligne.nom};${ligne.camion};${ligne.notes}\n`;
       });
