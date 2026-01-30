@@ -23,7 +23,6 @@
     .btn-excel { width:100%; margin-top:15px; background:#2e7d32; color:#fff; padding:12px; border:none; border-radius:6px; font-size:16px; cursor:pointer; }
     .message { margin-top:10px; color:green; font-size:14px; }
 
-    /* zone tombereaux (nouvelle partie) */
     .tombereaux { display:flex; gap:10px; margin-top:10px; }
     .tombereaux button {
       flex:1;
@@ -42,7 +41,11 @@
   </style>
 </head>
 <body>
-
+  
+  <div style="max-width:600px;margin:10px auto 0 auto; text-align:left;">
+    <img src="logo-merceron.png" alt="Merceron" style="height:40px;">
+  </div>
+  
   <div class="container">
     <h1><span>🚚</span>Pointage Camions</h1>
     <div class="subtitle">Saisie simple et rapide des passages</div>
@@ -52,10 +55,6 @@
       <div id="clock" class="clock-time">--:--:--</div>
     </div>
 
-    <label>Nom de la personne</label>
-    <input type="text" id="nom" placeholder="Ex: Jean Dupont">
-
-    <!-- Partie tombereaux comme sur ton schéma -->
     <label>Tombereau</label>
     <div class="tombereaux">
       <button type="button" onclick="choisirTombereau('Tombereau n°1', this)">Tombereau n°1</button>
@@ -63,7 +62,6 @@
       <button type="button" onclick="choisirTombereau('Tombereau n°3', this)">Tombereau n°3</button>
     </div>
 
-    <!-- Champ caché ou éditable qui contient la valeur exacte envoyée dans le CSV -->
     <input type="hidden" id="camion">
 
     <label>Heure de passage</label>
@@ -95,23 +93,20 @@
     setInterval(majHorloge, 1000);
     majHorloge();
 
-    // sélection du tombereau
     function choisirTombereau(valeur, bouton) {
       document.getElementById('camion').value = valeur;
-      // visuel sélectionné
       const tous = document.querySelectorAll('.tombereaux button');
       tous.forEach(b => b.classList.remove('selected'));
       bouton.classList.add('selected');
     }
 
     function enregistrer() {
-      const nom = document.getElementById('nom').value.trim();
       const camion = document.getElementById('camion').value.trim();
       let heurePassage = document.getElementById('heure').value;
       const notes = document.getElementById('notes').value.trim();
 
-      if (!nom || !camion) {
-        alert('Nom et tombereau sont obligatoires.');
+      if (!camion) {
+        alert('Le tombereau est obligatoire.');
         return;
       }
 
@@ -123,20 +118,39 @@
         heurePassage = `${h}:${m}`;
       }
 
+      // calcul de la durée depuis le dernier passage de ce tombereau
+      let dureeDepuisDernier = '';
+
+      for (let i = donnees.length - 1; i >= 0; i--) {
+        const ligne = donnees[i];
+        if (ligne.camion === camion) {
+          const dernierDateTime = new Date(`${ligne.date}T${ligne.heure}:00`);
+          const actuelDateTime = new Date(`${date}T${heurePassage}:00`);
+          const diffMs = actuelDateTime - dernierDateTime;
+          if (diffMs > 0) {
+            const diffMinTot = Math.floor(diffMs / 60000);
+            const heures = Math.floor(diffMinTot / 60);
+            const minutes = diffMinTot % 60;
+            dureeDepuisDernier = `${heures}h${String(minutes).padStart(2, '0')}`;
+          }
+          break;
+        }
+      }
+
       donnees.push({
         date,
         heure: heurePassage,
-        nom,
         camion,
-        notes
+        notes,
+        dureeDepuisDernier
       });
 
       document.getElementById('message').textContent =
-        `Passage enregistré : ${date} ${heurePassage} - ${nom} - ${camion}`;
+        `Passage enregistré : ${date} ${heurePassage} - ${camion}` +
+        (dureeDepuisDernier ? ` (dernier passage il y a ${dureeDepuisDernier})` : '');
     }
 
     function effacer() {
-      document.getElementById('nom').value = '';
       document.getElementById('camion').value = '';
       document.getElementById('heure').value = '';
       document.getElementById('notes').value = '';
@@ -150,9 +164,9 @@
         alert('Aucune donnée à exporter.');
         return;
       }
-      let csv = 'Date;Heure;Nom;Tombereau;Notes\n';
+      let csv = 'Date;Heure;Tombereau;Notes;DureeDepuisDernierPassage\n';
       donnees.forEach(ligne => {
-        csv += `${ligne.date};${ligne.heure};${ligne.nom};${ligne.camion};${ligne.notes}\n`;
+        csv += `${ligne.date};${ligne.heure};${ligne.camion};${ligne.notes};${ligne.dureeDepuisDernier}\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
